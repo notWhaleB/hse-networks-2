@@ -7,7 +7,7 @@ class Node {
     this.CMD = 'propagate'
     this.selfId = selfId
     this._neighborsIds = neighborsIds
-    this._peer = new Peer(selfId, { key })
+    this._peer = new Peer(selfId, { key: key, secure: true })
     this._value = ~~(Math.random() * 1e3)
     this._initiator = null
     this._connections = new Map(
