@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Test – Distributed Min</title>
+    <script src="static/peer_.js"></script>
+  </head>
+  <body>
+    <span id="log" style="font-family: monospace">
+      For detailed log see the console, result with the minimum will appear below
+    </span><br>
+    <span id="result" style="font-family: monospace">
+      Processing...
+    </span>
+    <script src="peer-node.js"></script>
+    <script>
+      if (document.location.href.indexOf('?err=1') !== -1) {
+        document.getElementById('log').innerHTML
+          += '<br>! Page was reloaded after connection error, '
+          + 'this could happen due to firewall/NAT or peerjs bugs'
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        let nodes = [
+          new Node('Alpha', 'Bravo', 'Charlie', 'Delta'),
+          new Node('Bravo', 'Alpha', 'Charlie', 'Echo'),
+          new Node('Charlie', 'Alpha', 'Bravo', 'Delta', 'Foxtrot'),
+          new Node('Delta', 'Alpha', 'Charlie'),
+          new Node('Echo', 'Bravo', 'Foxtrot', 'Golf', 'Hotel'),
+          new Node('Foxtrot', 'Charlie', 'Echo', 'Golf'),
+          new Node('Golf', 'Foxtrot', 'Echo', 'Hotel'),
+          new Node('Hotel', 'Echo', 'Golf')
+        ]
+
+        nodes.reduce((chain, node, idx, arr) => {
+          return chain.then(() => {
+            return new Promise(resolve => {
+              return node.ready(() => {
+                console.info(`[${idx + 1}/${arr.length}] initialized`)
+                return resolve()
+              })
+            })
+          })
+        }, Promise.resolve()).then(() => {
+          nodes.forEach(node => node.connect())
+          console.log('connecting...')
+          nodes.reduce((chain, node, idx, arr) => {
+            return chain.then(() => {
+              return new Promise(resolve => {
+                badConnection = setTimeout(() => {
+                  document.location.href = 'index.html?err=1'
+                }, 5000)
+                return node.connected(() => {
+                  clearTimeout(badConnection)
+                  console.info(`[${idx + 1}/${arr.length}] connected`)
+                  return resolve()
+                })
+              })
+            })
+          }, Promise.resolve()).then(() => nodes[0].propagate('_root'))
+        })
+      })
+    </script>
+  </body>
+</html>
